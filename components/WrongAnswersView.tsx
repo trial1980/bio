@@ -15,6 +15,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import {
   OptionKey,
+  PdfSourceId,
   Question,
   QuestionAttempt,
 } from '@/lib/types';
@@ -29,7 +30,7 @@ interface WrongAnswersViewProps {
   onMarkResolved: (questionId: string) => void;
   onSelectChapter: (chapterId: string) => void;
   onOpenPdfAtPage: (
-    pdfSource: 'module102' | 'heme_purine',
+    pdfSource: PdfSourceId,
     page: number,
     title: string
   ) => void;
@@ -66,9 +67,15 @@ export function WrongAnswersView({
       if (existing) {
         existing.count += 1;
       } else {
+        const subjPrefix =
+          ch?.subject === 'Anatomy'
+            ? 'Anat'
+            : ch?.subject === 'Histology'
+            ? 'Hist'
+            : 'Bio';
         map.set(q.chapterId, {
           id: q.chapterId,
-          label: ch ? `Ch ${ch.number}: ${ch.shortTitle}` : q.chapterId,
+          label: ch ? `${subjPrefix} Ch ${ch.number}: ${ch.shortTitle}` : q.chapterId,
           count: 1,
         });
       }

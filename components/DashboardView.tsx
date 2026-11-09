@@ -22,6 +22,8 @@ import {
   Chapter,
   ExamSessionResult,
   OverallAnalytics,
+  PdfSourceId,
+  SubjectId,
 } from '@/lib/types';
 import { formatDurationHuman } from '@/lib/quiz-engine';
 
@@ -33,18 +35,10 @@ interface DashboardViewProps {
   onGoToWrongBank: () => void;
   onStartExamSimulator: () => void;
   onInspectPastExam: (exam: ExamSessionResult) => void;
-  onOpenPdfAtPage: (pdfSource: 'module102' | 'heme_purine', page: number, title: string) => void;
+  onOpenPdfAtPage: (pdfSource: PdfSourceId, page: number, title: string) => void;
   onResetAllProgress: () => void;
   onRestoreDemoProgress: () => void;
 }
-
-const CATEGORIES: ('All' | Chapter['category'])[] = [
-  'All',
-  'Structural Biochemistry',
-  'Enzymology & Bioenergetics',
-  'Molecular Biology',
-  'Metabolism',
-];
 
 export function DashboardView({
   analytics,
@@ -58,6 +52,7 @@ export function DashboardView({
   onResetAllProgress,
   onRestoreDemoProgress,
 }: DashboardViewProps) {
+  const [selectedSubject, setSelectedSubject] = useState<'ALL' | SubjectId>('ALL');
   const [selectedCategory, setSelectedCategory] = useState<'All' | Chapter['category']>('All');
   const [chapterQuery, setChapterQuery] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
@@ -69,8 +64,23 @@ export function DashboardView({
     );
   }, [analytics.chapterAnalytics, lastActiveChapterId]);
 
+  const subjectScopedChapters = useMemo(() => {
+    if (selectedSubject === 'ALL') return analytics.chapterAnalytics;
+    return analytics.chapterAnalytics.filter(
+      (c) => (c.chapter.subject || 'Biochemistry') === selectedSubject
+    );
+  }, [analytics.chapterAnalytics, selectedSubject]);
+
+  const availableCategories = useMemo(() => {
+    const cats = new Set<string>();
+    for (const item of subjectScopedChapters) {
+      cats.add(item.chapter.category);
+    }
+    return ['All', ...Array.from(cats)];
+  }, [subjectScopedChapters]);
+
   const filteredChapters = useMemo(() => {
-    return analytics.chapterAnalytics.filter((item) => {
+    return subjectScopedChapters.filter((item) => {
       const matchesCat =
         selectedCategory === 'All' || item.chapter.category === selectedCategory;
       const q = chapterQuery.trim().toLowerCase();
@@ -82,20 +92,57 @@ export function DashboardView({
         `chapter ${item.chapter.number}`.includes(q);
       return matchesCat && matchesSearch;
     });
-  }, [analytics.chapterAnalytics, selectedCategory, chapterQuery]);
+  }, [subjectScopedChapters, selectedCategory, chapterQuery]);
+
+  // Subject-level stats
+  const subjectStats = useMemo(() => {
+    const bioChapters = analytics.chapterAnalytics.filter(
+      (c) => (c.chapter.subject || 'Biochemistry') === 'Biochemistry'
+    );
+    const anatChapters = analytics.chapterAnalytics.filter(
+      (c) => c.chapter.subject === 'Anatomy'
+    );
+    const histChapters = analytics.chapterAnalytics.filter(
+      (c) => c.chapter.subject === 'Histology'
+    );
+    const sumStats = (list: OverallAnalytics['chapterAnalytics']) => {
+      const total = list.reduce((acc, c) => acc + c.totalQuestions, 0);
+      const answered = list.reduce((acc, c) => acc + c.answeredQuestions, 0);
+      const correct = list.reduce((acc, c) => acc + c.correctQuestions, 0);
+      const wrong = list.reduce((acc, c) => acc + c.wrongQuestions, 0);
+      const prog = total > 0 ? Math.round((answered / total) * 100) : 0;
+      const acc = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+      return { total, answered, correct, wrong, prog, acc, chaptersCount: list.length };
+    };
+    return {
+      ALL: sumStats(analytics.chapterAnalytics),
+      Biochemistry: sumStats(bioChapters),
+      Anatomy: sumStats(anatChapters),
+      Histology: sumStats(histChapters),
+    };
+  }, [analytics.chapterAnalytics]);
+
+  const activeSubjectSummary =
+    selectedSubject === 'Anatomy'
+      ? subjectStats.Anatomy
+      : selectedSubject === 'Histology'
+      ? subjectStats.Histology
+      : selectedSubject === 'Biochemistry'
+      ? subjectStats.Biochemistry
+      : subjectStats.ALL;
 
   const unansweredTotal = Math.max(
     0,
-    analytics.totalQuestions - analytics.answeredQuestions
+    activeSubjectSummary.total - activeSubjectSummary.answered
   );
 
   const correctBarPercent =
-    analytics.totalQuestions > 0
-      ? (analytics.correctQuestions / analytics.totalQuestions) * 100
+    activeSubjectSummary.total > 0
+      ? (activeSubjectSummary.correct / activeSubjectSummary.total) * 100
       : 0;
   const wrongBarPercent =
-    analytics.totalQuestions > 0
-      ? (analytics.wrongQuestions / analytics.totalQuestions) * 100
+    activeSubjectSummary.total > 0
+      ? (activeSubjectSummary.wrong / activeSubjectSummary.total) * 100
       : 0;
 
   return (
@@ -105,15 +152,19 @@ export function DashboardView({
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
           <div className="max-w-2xl space-y-2">
             <p className="font-mono text-xs font-medium tracking-wider text-teal-700 uppercase dark:text-teal-400">
-              Module 102 · Complete Biochemistry &amp; Molecular Biology Curriculum
+              Complete Medical MCQ Question Bank · Module 101 &amp; Module 102
             </p>
             <h1 className="font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl dark:text-slate-50">
-              Mastery Dashboard &amp; Chapter Progression
+              Mastery Dashboard &amp; Multi-Subject Progression
             </h1>
             <p className="text-sm leading-relaxed text-slate-600 sm:text-base dark:text-slate-400">
-              Track your question-by-question progression across all 17 separated chapters from
-              Dr. Hesham Esmat&apos;s Module 102 &amp; Heme/Purine MCQ banks, remediate wrong answers,
-              and benchmark under timed 60-minute exam conditions.
+              Track your question-by-question progression across all{' '}
+              <span className="font-mono font-semibold text-slate-900 dark:text-slate-200">54</span>{' '}
+              separated chapters (<span className="font-mono font-semibold">1,137</span> Biochemistry MCQs
+              + <span className="font-mono font-semibold">581</span> Upper Limb Anatomy MCQs +{' '}
+              <span className="font-mono font-semibold">285</span> Histology MCQs ={' '}
+              <span className="font-mono font-semibold">2,003</span> total questions), remediate wrong
+              answers, and benchmark under timed 60-minute exam conditions.
             </p>
           </div>
 
@@ -125,7 +176,15 @@ export function DashboardView({
                 className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-all hover:bg-teal-700 active:scale-[0.99] dark:bg-teal-500 dark:text-slate-950 dark:hover:bg-teal-400"
               >
                 <BookOpen className="h-4 w-4" />
-                <span>Continue Ch {lastActiveChapter.number}: {lastActiveChapter.shortTitle}</span>
+                <span>
+                  Continue{' '}
+                  {lastActiveChapter.subject === 'Anatomy'
+                    ? 'Anat'
+                    : lastActiveChapter.subject === 'Histology'
+                    ? 'Hist'
+                    : 'Bio'}{' '}
+                  Ch {lastActiveChapter.number}: {lastActiveChapter.shortTitle}
+                </span>
                 <ArrowRight className="h-4 w-4" />
               </button>
             )}
@@ -141,19 +200,86 @@ export function DashboardView({
           </div>
         </div>
 
+        {/* Multi-Subject Selector Strip */}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/80 pt-5 dark:border-slate-800/80">
+          <div className="flex flex-wrap items-center gap-2">
+            {(
+              [
+                {
+                  id: 'ALL',
+                  label: 'All Subjects',
+                  meta: `${subjectStats.ALL.total} Qs · ${subjectStats.ALL.chaptersCount} Ch`,
+                },
+                {
+                  id: 'Biochemistry',
+                  label: 'Biochemistry (Mod 102)',
+                  meta: `${subjectStats.Biochemistry.total} Qs · ${subjectStats.Biochemistry.chaptersCount} Ch`,
+                },
+                {
+                  id: 'Anatomy',
+                  label: 'Anatomy — Upper Limb',
+                  meta: `${subjectStats.Anatomy.total} Qs · ${subjectStats.Anatomy.chaptersCount} Ch`,
+                },
+                {
+                  id: 'Histology',
+                  label: 'Histology (Semester 1)',
+                  meta: `${subjectStats.Histology.total} Qs · ${subjectStats.Histology.chaptersCount} Ch`,
+                },
+              ] as const
+            ).map((subj) => {
+              const isSelected = selectedSubject === subj.id;
+              return (
+                <button
+                  key={subj.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedSubject(subj.id);
+                    setSelectedCategory('All');
+                  }}
+                  className={`flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-left text-xs font-semibold transition-all ${
+                    isSelected
+                      ? 'border-teal-600 bg-teal-600 text-white shadow-2xs dark:border-teal-400 dark:bg-teal-500 dark:text-slate-950'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <span>{subj.label}</span>
+                  <span
+                    className={`font-mono text-[11px] tabular-nums ${
+                      isSelected
+                        ? 'text-teal-100 dark:text-slate-900'
+                        : 'text-slate-400 dark:text-slate-500'
+                    }`}
+                  >
+                    {subj.meta}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+            <span className="font-mono text-[11px]">
+              Physiology slot ready for next PDF upload
+            </span>
+          </div>
+        </div>
+
         {/* Segmented Overall Bank Progression Bar */}
-        <div className="mt-7 rounded-xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-slate-800/80 dark:bg-slate-950/60">
+        <div className="mt-5 rounded-xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-slate-800/80 dark:bg-slate-950/60">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <div>
               <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                Overall Question Bank Progression
+                {selectedSubject === 'ALL'
+                  ? 'Overall Combined Bank Progression'
+                  : `${selectedSubject} Bank Progression`}
               </span>
               <div className="mt-1 flex items-baseline gap-2">
                 <span className="font-mono text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
-                  {analytics.progressionPercentage}%
+                  {activeSubjectSummary.prog}%
                 </span>
                 <span className="font-mono text-xs tabular-nums text-slate-500 dark:text-slate-400">
-                  ({analytics.answeredQuestions} of {analytics.totalQuestions} questions answered)
+                  ({activeSubjectSummary.answered} of {activeSubjectSummary.total} questions answered across{' '}
+                  {activeSubjectSummary.chaptersCount} chapters)
                 </span>
               </div>
             </div>
@@ -161,11 +287,11 @@ export function DashboardView({
             <div className="flex flex-wrap items-center gap-5 text-xs font-medium">
               <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
                 <span className="h-2.5 w-2.5 rounded-xs bg-emerald-500" />
-                <span className="font-mono tabular-nums">{analytics.correctQuestions}</span> Correct
+                <span className="font-mono tabular-nums">{activeSubjectSummary.correct}</span> Correct
               </span>
               <span className="flex items-center gap-1.5 text-rose-700 dark:text-rose-400">
                 <span className="h-2.5 w-2.5 rounded-xs bg-rose-500" />
-                <span className="font-mono tabular-nums">{analytics.wrongQuestions}</span> Wrong
+                <span className="font-mono tabular-nums">{activeSubjectSummary.wrong}</span> Wrong
               </span>
               <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                 <span className="h-2.5 w-2.5 rounded-xs bg-slate-300 dark:bg-slate-700" />
@@ -179,19 +305,19 @@ export function DashboardView({
               className="h-full bg-emerald-500 transition-all duration-500"
               initial={{ width: 0 }}
               animate={{ width: `${correctBarPercent}%` }}
-              title={`Correct: ${analytics.correctQuestions}`}
+              title={`Correct: ${activeSubjectSummary.correct}`}
             />
             <motion.div
               className="h-full bg-rose-500 transition-all duration-500"
               initial={{ width: 0 }}
               animate={{ width: `${wrongBarPercent}%` }}
-              title={`Wrong: ${analytics.wrongQuestions}`}
+              title={`Wrong: ${activeSubjectSummary.wrong}`}
             />
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/70 pt-3 text-xs text-slate-500 dark:border-slate-800/70 dark:text-slate-400">
             <span>
-              15 Core Module 102 Chapters + 2 Dedicated Metabolism Chapters (Heme &amp; Purines/Pyrimidines)
+              Biochemistry: 1,137 Qs (17 Ch) · Upper Limb Anatomy: 581 Qs (33 Ch) · Histology: 285 Qs (4 Ch)
             </span>
             <div className="flex items-center gap-3">
               {analytics.answeredQuestions === 0 ? (
@@ -253,13 +379,17 @@ export function DashboardView({
             <Layers className="h-4 w-4 text-teal-600 dark:text-teal-400" />
           </div>
           <div className="mt-3 font-mono text-3xl font-bold tabular-nums text-slate-900 dark:text-white">
-            {analytics.answeredQuestions}{' '}
+            {activeSubjectSummary.answered}{' '}
             <span className="text-lg font-normal text-slate-400 dark:text-slate-500">
-              / {analytics.totalQuestions}
+              / {activeSubjectSummary.total}
             </span>
           </div>
           <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
-            Across all <span className="font-mono font-semibold tabular-nums">17</span> separated biochemistry chapters
+            Across{' '}
+            <span className="font-mono font-semibold tabular-nums">
+              {activeSubjectSummary.chaptersCount}
+            </span>{' '}
+            separated chapters
           </p>
         </div>
 
@@ -267,15 +397,15 @@ export function DashboardView({
         <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xs dark:border-slate-800/90 dark:bg-slate-900">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase dark:text-slate-400">
-              Overall Accuracy Rate
+              Accuracy Rate
             </span>
             <Target className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="mt-3 font-mono text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-            {analytics.accuracyPercentage}%
+            {activeSubjectSummary.acc}%
           </div>
           <p className="mt-2 font-mono text-xs tabular-nums text-slate-600 dark:text-slate-400">
-            {analytics.correctQuestions} correct · {analytics.wrongQuestions} incorrect
+            {activeSubjectSummary.correct} correct · {activeSubjectSummary.wrong} incorrect
           </p>
         </div>
 
@@ -327,7 +457,7 @@ export function DashboardView({
         <div className="flex flex-col justify-between gap-4 border-b border-slate-200/80 pb-4 lg:flex-row lg:items-end dark:border-slate-800/80">
           <div>
             <h2 className="font-display text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">
-              Chapter-by-Chapter Progression &amp; Performance Analytics
+              Chapter-by-Chapter Progression &amp; Performance Analytics ({filteredChapters.length})
             </h2>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
               Each chapter is separated with its own progression bar, accuracy analytics, and direct link to the source PDF pages.
@@ -341,7 +471,7 @@ export function DashboardView({
                 type="text"
                 value={chapterQuery}
                 onChange={(e) => setChapterQuery(e.target.value)}
-                placeholder="Filter 17 chapters..."
+                placeholder="Filter chapters by topic..."
                 aria-label="Filter chapters by title or topic"
                 className="w-full rounded-xl border border-slate-200 bg-white py-2 pr-3 pl-9 text-xs text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none sm:w-56 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
               />
@@ -351,7 +481,7 @@ export function DashboardView({
 
         {/* Category Filter Tabs */}
         <div className="flex flex-wrap items-center gap-1.5">
-          {CATEGORIES.map((category) => {
+          {availableCategories.map((category) => {
             const active = selectedCategory === category;
             return (
               <button
@@ -364,13 +494,15 @@ export function DashboardView({
                     : 'border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800'
                 }`}
               >
-                {category === 'All' ? 'All 17 Chapters' : category}
+                {category === 'All'
+                  ? `All ${subjectScopedChapters.length} Chapters`
+                  : category}
               </button>
             );
           })}
         </div>
 
-        {/* 17 Chapters Grid */}
+        {/* Chapters Grid */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filteredChapters.map((item) => {
             const {
@@ -383,6 +515,20 @@ export function DashboardView({
               accuracyPercentage,
             } = item;
 
+            const subjBadge =
+              chapter.subject === 'Anatomy'
+                ? 'ANATOMY'
+                : chapter.subject === 'Histology'
+                ? 'HISTOLOGY'
+                : 'BIOCHEM';
+
+            const subjName =
+              chapter.subject === 'Anatomy'
+                ? 'Anatomy'
+                : chapter.subject === 'Histology'
+                ? 'Histology'
+                : 'Biochemistry';
+
             return (
               <div
                 key={chapter.id}
@@ -392,7 +538,8 @@ export function DashboardView({
                   {/* Clean Inline Unboxed Metadata */}
                   <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
                     <span className="font-mono font-semibold text-teal-700 dark:text-teal-400">
-                      CHAPTER {String(chapter.number).padStart(2, '0')} · {chapter.category}
+                      {subjBadge} CH {String(chapter.number).padStart(2, '0')} ·{' '}
+                      {chapter.category}
                     </span>
                     <button
                       type="button"
@@ -400,7 +547,7 @@ export function DashboardView({
                         onOpenPdfAtPage(
                           chapter.pdfSource,
                           chapter.startPage,
-                          `Ch ${chapter.number}: ${chapter.title}`
+                          `${subjName} Ch ${chapter.number}: ${chapter.title}`
                         )
                       }
                       className="inline-flex items-center gap-1 font-mono text-[11px] text-slate-500 hover:text-teal-600 dark:text-slate-400 dark:hover:text-teal-400"

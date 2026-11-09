@@ -23,10 +23,17 @@ import {
 } from './quiz-engine';
 import { OptionKey } from './types';
 
-describe('BioMed 102 Question Bank & Quiz Engine', () => {
-  it('loads all 17 separated chapters and all 1,137 authentic questions with explanations', () => {
-    assert.equal(CHAPTERS.length, 17);
-    assert.equal(ALL_QUESTIONS.length, 1137, `Expected all 1,137 questions, got ${ALL_QUESTIONS.length}`);
+describe('MedBank 101–102 Multi-Subject Question Bank & Quiz Engine', () => {
+  it('loads all 54 separated chapters (17 Biochemistry + 33 Upper Limb Anatomy + 4 Histology) and all 2,003 authentic questions with explanations', () => {
+    assert.equal(CHAPTERS.length, 54);
+    assert.equal(ALL_QUESTIONS.length, 2003, `Expected all 2,003 questions, got ${ALL_QUESTIONS.length}`);
+
+    const bioQuestions = ALL_QUESTIONS.filter((q) => (q.subject || 'Biochemistry') === 'Biochemistry');
+    const anatQuestions = ALL_QUESTIONS.filter((q) => q.subject === 'Anatomy');
+    const histQuestions = ALL_QUESTIONS.filter((q) => q.subject === 'Histology');
+    assert.equal(bioQuestions.length, 1137);
+    assert.equal(anatQuestions.length, 581);
+    assert.equal(histQuestions.length, 285);
 
     for (const ch of CHAPTERS) {
       const chQuestions = ALL_QUESTIONS.filter((q) => q.chapterId === ch.id);
@@ -38,6 +45,10 @@ describe('BioMed 102 Question Bank & Quiz Engine', () => {
         assert.ok(q.stem.length > 3, `Question ${q.id} should have a stem`);
         assert.ok(q.explanation.length > 15, `Question ${q.id} should have an explanation`);
         assert.ok(q.options.length >= 4, `Question ${q.id} should have >=4 options`);
+        assert.ok(
+          q.options.some((o) => o.key === q.correctOption),
+          `Question ${q.id} correctOption ${q.correctOption} must exist in options`
+        );
       }
     }
   });
@@ -142,7 +153,7 @@ describe('BioMed 102 Question Bank & Quiz Engine', () => {
     assert.ok(analytics.answeredQuestions > 50);
     assert.ok(analytics.activeWrongCount >= 5);
     assert.equal(analytics.examsTaken, 2);
-    assert.equal(analytics.chapterAnalytics.length, 17);
+    assert.equal(analytics.chapterAnalytics.length, 54);
   });
 
   it('formats countdown timer values accurately', () => {

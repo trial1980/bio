@@ -11,6 +11,7 @@ import { PdfReferenceModal } from '@/components/PdfReferenceModal';
 import {
   ExamSessionResult,
   OptionKey,
+  PdfSourceId,
   Question,
   UserProgressState,
 } from '@/lib/types';
@@ -25,7 +26,7 @@ import {
   toggleBookmark,
 } from '@/lib/quiz-engine';
 
-const STORAGE_KEY_PROGRESS = 'biomed102_mcq_progress_v2_full_1137';
+const STORAGE_KEY_PROGRESS = 'biomed_mcq_progress_v4_full_2003';
 const STORAGE_KEY_THEME = 'biomed102_theme_v1';
 
 export default function BioMed102App() {
@@ -44,14 +45,14 @@ export default function BioMed102App() {
   // PDF Viewer Modal state
   const [pdfModal, setPdfModal] = useState<{
     isOpen: boolean;
-    pdfSource: 'module102' | 'heme_purine';
+    pdfSource: PdfSourceId;
     page: number;
     title: string;
   }>({
     isOpen: false,
     pdfSource: 'module102',
     page: 2,
-    title: 'Dr. Hesham Esmat — Biochemistry Module 102 MCQ Bank',
+    title: 'Medical MCQ Bank — Original Source PDFs',
   });
 
   // Load saved state & URL parameters on mount
@@ -181,7 +182,7 @@ export default function BioMed102App() {
   }, []);
 
   const handleOpenPdfAtPage = useCallback(
-    (pdfSource: 'module102' | 'heme_purine', page: number, title: string) => {
+    (pdfSource: PdfSourceId, page: number, title: string) => {
       setPdfModal({
         isOpen: true,
         pdfSource,

@@ -1,17 +1,22 @@
-import { Chapter, Question } from '../types';
+import { Chapter, Question, SubjectId } from '../types';
 import { QUESTIONS_CH1_TO_5 } from './chapters-1-to-5';
 import { QUESTIONS_CH6_TO_11 } from './chapters-6-to-11';
 import { QUESTIONS_CH12_TO_17 } from './chapters-12-to-17';
+import { ANATOMY_UL_CHAPTERS, ANATOMY_UL_QUESTIONS } from './anatomy-upper-limb';
+import { HISTOLOGY_CHAPTERS, HISTOLOGY_QUESTIONS } from './histology';
 
 export const PDF_URLS = {
   module102: '/assets/aistudio/Dr._Hesham_Esmat_-_Bio._MCQ_Questions_-_Module_102.pdf_034b3a12.pdf',
   heme_purine: '/assets/aistudio/Bio_102_Dr_Hesham_Esmat_Module_102_Heme_Metabolism___Purine_Metabolism_75e4a9da.pdf',
+  anatomy_ul: '/assets/aistudio/UII10G28_10_2026_08_21_38_71833af6eace4275b4c2dfa298c5a464_b41073cc.pdf',
+  histology: '/assets/aistudio/histology_mcq_9a151089.pdf',
 } as const;
 
-export const CHAPTERS: Chapter[] = [
+export const BIOCHEMISTRY_CHAPTERS: Chapter[] = [
   {
     id: 'ch1',
     number: 1,
+    subject: 'Biochemistry',
     title: 'Amino Acids of Biological Importance',
     shortTitle: 'Amino Acids',
     description: 'Essential & semi-essential classifications, zwitterions, isoelectric point (IEP), sulfur & hydroxyl side chains, and ketogenic/glucogenic pathways.',
@@ -24,6 +29,7 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch2',
     number: 2,
+    subject: 'Biochemistry',
     title: 'Proteins of Biological Importance',
     shortTitle: 'Proteins Structure',
     description: 'Primary, secondary (α-helix, β-pleated sheets), tertiary & quaternary levels, stabilizing bonds, molecular chaperones, and denaturation.',
@@ -36,6 +42,7 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch3',
     number: 3,
+    subject: 'Biochemistry',
     title: 'Carbohydrates of Biological Importance',
     shortTitle: 'Carbohydrates',
     description: 'Aldoses vs ketoses, epimers, anomers, sugar alcohols (sorbitol, mannitol, dulcitol), disaccharides, homopolysaccharides, and GAGs/proteoglycans.',
@@ -48,6 +55,7 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch4',
     number: 4,
+    subject: 'Biochemistry',
     title: 'Lipids of Biological Importance',
     shortTitle: 'Lipids & Eicosanoids',
     description: 'Saturated & essential PUFAs (ω-3, ω-6), cyclic & acyclic eicosanoids, phospholipids (lecithin, cardiolipin, plasmalogens), lung surfactant, and cholesterol.',
@@ -60,6 +68,7 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch5',
     number: 5,
+    subject: 'Biochemistry',
     title: 'Chemistry of Hemeproteins',
     shortTitle: 'Hemeproteins',
     description: 'Hemoglobin vs myoglobin structure, proximal/distal histidines, oxygen dissociation & 2,3-BPG, HbF, HbA1c, and hemoglobinopathies (HbS, HbC, thalassemias).',
@@ -72,6 +81,7 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch6',
     number: 6,
+    subject: 'Biochemistry',
     title: 'Proteins of Extracellular Matrix',
     shortTitle: 'Extracellular Matrix',
     description: 'Tropocollagen triple helix, Vitamin C hydroxylation, elastin & desmosine cross-links, fibronectin, osteocalcin, and aggrecan bottle-brush structure.',
@@ -84,6 +94,7 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch7',
     number: 7,
+    subject: 'Biochemistry',
     title: 'Enzymes',
     shortTitle: 'Enzymes & Kinetics',
     description: 'Activation energy, Michaelis constant (Km) & Vmax, competitive vs allosteric & irreversible inhibition, zymogens, and covalent modification.',
@@ -96,6 +107,7 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch8',
     number: 8,
+    subject: 'Biochemistry',
     title: 'Chemistry of Free Nucleotides',
     shortTitle: 'Free Nucleotides',
     description: 'Nucleosides vs nucleotides, phosphodiester & N-glycosidic linkages, PAPS sulfate donor, SAM methyl donor, cAMP/cGMP second messengers, and coenzymes.',
@@ -108,6 +120,7 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch9',
     number: 9,
+    subject: 'Biochemistry',
     title: 'Chemistry of Nucleic Acid',
     shortTitle: 'Nucleic Acids',
     description: 'DNA double helix structure, Chargaff rules, histones & nucleosomes, mitochondrial DNA, and RNA classes (mRNA codons, tRNA arms & unusual bases, rRNA, snRNA).',
@@ -120,6 +133,7 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch10',
     number: 10,
+    subject: 'Biochemistry',
     title: 'DNA Synthesis (Replication)',
     shortTitle: 'DNA Replication',
     description: 'Semiconservative & semi-discontinuous replication, helicase, topoisomerases, RNA primers, Okazaki fragments, prokaryotic & eukaryotic DNA polymerases, and telomerase.',
@@ -132,6 +146,7 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch11',
     number: 11,
+    subject: 'Biochemistry',
     title: 'RNA Synthesis (Transcription)',
     shortTitle: 'RNA Transcription',
     description: 'Promoters (TATA & Pribnow boxes), sigma & rho factors, eukaryotic RNA polymerases I/II/III, 5′ capping, 3′ poly(A) tail, spliceosomes (SLE snRNPs), and ApoB mRNA editing.',
@@ -144,6 +159,7 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch12',
     number: 12,
+    subject: 'Biochemistry',
     title: 'Protein Synthesis (Translation)',
     shortTitle: 'Translation & Mutations',
     description: 'Genetic code characteristics, wobble hypothesis, aminoacyl-tRNA synthetases, peptidyl transferase, point/frameshift mutations, and post-translational modifications.',
@@ -156,6 +172,7 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch13',
     number: 13,
+    subject: 'Biochemistry',
     title: 'Regulation of Gene Expression',
     shortTitle: 'Gene Regulation',
     description: 'Epigenetics (DNA CpG methylation & histone lysine acetylation), enhancers vs promoters, alternative splicing, miRNAs, gene amplification (methotrexate), and V(D)J rearrangement.',
@@ -168,6 +185,7 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch14',
     number: 14,
+    subject: 'Biochemistry',
     title: 'Cell Cycle, Apoptosis and Tumor Necrosis Genes',
     shortTitle: 'Cell Cycle & Apoptosis',
     description: 'G1/S/G2/M/G0 phases, Cyclin-CDK complexes, restriction & spindle checkpoints, intrinsic (cytochrome c, Bax/Bcl-2) vs extrinsic (Fas/TNF, Caspase-8) apoptosis pathways.',
@@ -180,6 +198,7 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch15',
     number: 15,
+    subject: 'Biochemistry',
     title: 'Introduction & Physio-Chemistry Principles',
     shortTitle: 'Physio-Chemistry',
     description: 'Covalent vs non-covalent bonds, electronegativity, hydrogen bonds, ionic interactions (salt bridges), hydrophobic clustering, and Van der Waals transient dipoles.',
@@ -192,6 +211,7 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch16',
     number: 16,
+    subject: 'Biochemistry',
     title: 'Metabolism of Heme',
     shortTitle: 'Heme Metabolism',
     description: 'Heme biosynthesis (ALA synthase, PLP cofactor, lead poisoning), porphyrias (AIP vs PCT, photosensitivity), bilirubin conjugation, and pre-hepatic/hepatic/obstructive jaundice.',
@@ -204,6 +224,7 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch17',
     number: 17,
+    subject: 'Biochemistry',
     title: 'Purines & Pyrimidines Metabolism',
     shortTitle: 'Purines & Pyrimidines',
     description: 'De novo purine synthesis nitrogen donors & committed step, HGPRT salvage pathway, Lesch-Nyhan syndrome, uric acid & gout (allopurinol), ADA-SCID, and ribonucleotide reductase.',
@@ -215,10 +236,22 @@ export const CHAPTERS: Chapter[] = [
   },
 ];
 
-export const ALL_QUESTIONS: Question[] = [
+export const CHAPTERS: Chapter[] = [
+  ...BIOCHEMISTRY_CHAPTERS,
+  ...ANATOMY_UL_CHAPTERS,
+  ...HISTOLOGY_CHAPTERS,
+];
+
+const BIOCHEMISTRY_QUESTIONS: Question[] = [
   ...QUESTIONS_CH1_TO_5,
   ...QUESTIONS_CH6_TO_11,
   ...QUESTIONS_CH12_TO_17,
+].map((q) => ({ ...q, subject: 'Biochemistry' as const }));
+
+export const ALL_QUESTIONS: Question[] = [
+  ...BIOCHEMISTRY_QUESTIONS,
+  ...ANATOMY_UL_QUESTIONS,
+  ...HISTOLOGY_QUESTIONS,
 ];
 
 export const QUESTIONS_BY_ID: Record<string, Question> = Object.fromEntries(
@@ -232,3 +265,14 @@ export const CHAPTERS_BY_ID: Record<string, Chapter> = Object.fromEntries(
 export function getQuestionsByChapter(chapterId: string): Question[] {
   return ALL_QUESTIONS.filter((q) => q.chapterId === chapterId);
 }
+
+export function getChaptersBySubject(subject: SubjectId | 'ALL'): Chapter[] {
+  if (subject === 'ALL') return CHAPTERS;
+  return CHAPTERS.filter((ch) => (ch.subject || 'Biochemistry') === subject);
+}
+
+export function getQuestionsBySubject(subject: SubjectId | 'ALL'): Question[] {
+  if (subject === 'ALL') return ALL_QUESTIONS;
+  return ALL_QUESTIONS.filter((q) => (q.subject || 'Biochemistry') === subject);
+}
+

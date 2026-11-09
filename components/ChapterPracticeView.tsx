@@ -21,8 +21,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   ChapterAnalytics,
   OptionKey,
+  PdfSourceId,
   Question,
   QuestionAttempt,
+  SubjectId,
 } from '@/lib/types';
 import { getQuestionsByChapter } from '@/lib/questions';
 import { isAnswerCorrect } from '@/lib/quiz-engine';
@@ -37,7 +39,7 @@ interface ChapterPracticeViewProps {
   onToggleBookmark: (questionId: string) => void;
   onResetChapter: (chapterId: string) => void;
   onOpenPdfAtPage: (
-    pdfSource: 'module102' | 'heme_purine',
+    pdfSource: PdfSourceId,
     page: number,
     title: string
   ) => void;
@@ -56,6 +58,13 @@ export function ChapterPracticeView({
   onResetChapter,
   onOpenPdfAtPage,
 }: ChapterPracticeViewProps) {
+  const [sidebarSubject, setSidebarSubject] = useState<'ALL' | SubjectId>(() =>
+    activeChapterId.startsWith('anat-')
+      ? 'Anatomy'
+      : activeChapterId.startsWith('hist-')
+      ? 'Histology'
+      : 'ALL'
+  );
   const [filter, setFilter] = useState<QuestionFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [revealAllExplanations, setRevealAllExplanations] = useState(false);
@@ -69,6 +78,13 @@ export function ChapterPracticeView({
       chapterAnalyticsList[0]
     );
   }, [chapterAnalyticsList, activeChapterId]);
+
+  const sidebarChapters = useMemo(() => {
+    if (sidebarSubject === 'ALL') return chapterAnalyticsList;
+    return chapterAnalyticsList.filter(
+      (c) => (c.chapter.subject || 'Biochemistry') === sidebarSubject
+    );
+  }, [chapterAnalyticsList, sidebarSubject]);
 
   const chapterQuestions = useMemo(() => {
     return getQuestionsByChapter(activeChapterData.chapter.id);
@@ -124,27 +140,80 @@ export function ChapterPracticeView({
     accuracyPercentage,
   } = activeChapterData;
 
+  const activeChapterGlobalIndex = useMemo(() => {
+    return chapterAnalyticsList.findIndex((c) => c.chapter.id === chapter.id);
+  }, [chapterAnalyticsList, chapter.id]);
+
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        {/* Left Sidebar: All 17 Separated Chapters */}
+        {/* Left Sidebar: All 54 Separated Chapters with Subject Switcher */}
         <aside className="lg:col-span-4 xl:col-span-3">
           <div className="sticky top-20 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-2xs dark:border-slate-800/90 dark:bg-slate-900">
             <div className="flex items-center justify-between border-b border-slate-200/80 pb-3 dark:border-slate-800/80">
               <div>
                 <h2 className="font-display text-sm font-bold text-slate-900 dark:text-white">
-                  17 Separated Chapters
+                  {sidebarChapters.length} Separated Chapters
                 </h2>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Select a chapter to study &amp; track progress
+                  Biochem (17) · Anatomy (33) · Histology (4)
                 </p>
               </div>
               <BookOpen className="h-4 w-4 text-teal-600 dark:text-teal-400" />
             </div>
 
-            <div className="mt-3 max-h-[68vh] space-y-1.5 overflow-y-auto pr-1">
-              {chapterAnalyticsList.map((item) => {
+            {/* Subject Filter Tabs in Sidebar */}
+            <div className="mt-3 grid grid-cols-2 gap-1 rounded-xl border border-slate-200/80 bg-slate-100/80 p-1 dark:border-slate-800 dark:bg-slate-950">
+              {(
+                [
+                  { id: 'ALL', label: 'All (54)' },
+                  { id: 'Biochemistry', label: 'Biochem (17)' },
+                  { id: 'Anatomy', label: 'Anatomy (33)' },
+                  { id: 'Histology', label: 'Histology (4)' },
+                ] as const
+              ).map((s) => {
+                const isAct = sidebarSubject === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => {
+                      setSidebarSubject(s.id);
+                      if (
+                        s.id !== 'ALL' &&
+                        (chapter.subject || 'Biochemistry') !== s.id
+                      ) {
+                        const firstInSubj = chapterAnalyticsList.find(
+                          (c) => (c.chapter.subject || 'Biochemistry') === s.id
+                        );
+                        if (firstInSubj) {
+                          onSelectChapter(firstInSubj.chapter.id);
+                          setFocusIndex(0);
+                          setSessionAnsweredIds([]);
+                        }
+                      }
+                    }}
+                    className={`rounded-lg py-1.5 text-[11px] font-semibold transition-colors ${
+                      isAct
+                        ? 'bg-white text-slate-900 shadow-2xs dark:bg-slate-800 dark:text-white'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-3 max-h-[64vh] space-y-1.5 overflow-y-auto pr-1">
+              {sidebarChapters.map((item) => {
                 const isSelected = item.chapter.id === chapter.id;
+                const subjTag =
+                  item.chapter.subject === 'Anatomy'
+                    ? 'ANAT'
+                    : item.chapter.subject === 'Histology'
+                    ? 'HIST'
+                    : 'BIO';
                 return (
                   <button
                     key={item.chapter.id}
@@ -168,7 +237,7 @@ export function ChapterPracticeView({
                             : 'text-slate-500 dark:text-slate-400'
                         }`}
                       >
-                        CH {String(item.chapter.number).padStart(2, '0')}
+                        {subjTag} CH {String(item.chapter.number).padStart(2, '0')}
                       </span>
                       <span className="font-mono text-[11px] tabular-nums text-slate-500 dark:text-slate-400">
                         {item.answeredQuestions}/{item.totalQuestions} · {item.progressionPercentage}%
@@ -197,14 +266,25 @@ export function ChapterPracticeView({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <span className="font-mono font-bold text-teal-700 dark:text-teal-400">
-                  CHAPTER {String(chapter.number).padStart(2, '0')}
+                  {chapter.subject === 'Anatomy'
+                    ? 'UPPER LIMB ANATOMY'
+                    : chapter.subject === 'Histology'
+                    ? 'HISTOLOGY'
+                    : 'BIOCHEMISTRY'}{' '}
+                  · CHAPTER {String(chapter.number).padStart(2, '0')}
                 </span>
                 <span>·</span>
                 <span>{chapter.category}</span>
                 <span>·</span>
                 <span className="font-mono">
-                  {chapter.pdfSource === 'module102' ? 'Module 102 PDF' : 'Heme & Purine PDF'} (pp.{' '}
-                  {chapter.startPage}–{chapter.endPage})
+                  {chapter.pdfSource === 'module102'
+                    ? 'Module 102 PDF'
+                    : chapter.pdfSource === 'anatomy_ul'
+                    ? 'Upper Limb Anatomy PDF'
+                    : chapter.pdfSource === 'histology'
+                    ? 'Histology MCQ PDF'
+                    : 'Heme & Purine PDF'}{' '}
+                  (pp. {chapter.startPage}–{chapter.endPage})
                 </span>
               </div>
 
@@ -592,7 +672,12 @@ export function ChapterPracticeView({
                               <div className="flex items-center gap-1.5 text-xs font-bold text-teal-800 dark:text-teal-300">
                                 <Sparkles className="h-3.5 w-3.5" />
                                 <span>
-                                  Biochemical Explanation · Answer Key:{' '}
+                                  {q.subject === 'Anatomy'
+                                    ? 'Anatomical Explanation'
+                                    : q.subject === 'Histology'
+                                    ? 'Histological Explanation'
+                                    : 'Biochemical Explanation'}{' '}
+                                  · Answer Key:{' '}
                                   <span className="font-mono uppercase">
                                     {q.correctOption}
                                     {q.alsoAcceptedOption
@@ -626,17 +711,20 @@ export function ChapterPracticeView({
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Currently viewing{' '}
               <span className="font-semibold text-slate-900 dark:text-white">
+                {chapter.subject === 'Anatomy'
+                  ? 'Anatomy'
+                  : chapter.subject === 'Histology'
+                  ? 'Histology'
+                  : 'Biochemistry'}{' '}
                 Chapter {chapter.number}: {chapter.title}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              {chapter.number > 1 && (
+              {activeChapterGlobalIndex > 0 && (
                 <button
                   type="button"
                   onClick={() => {
-                    const prev = chapterAnalyticsList.find(
-                      (c) => c.chapter.number === chapter.number - 1
-                    );
+                    const prev = chapterAnalyticsList[activeChapterGlobalIndex - 1];
                     if (prev) {
                       onSelectChapter(prev.chapter.id);
                       setFocusIndex(0);
@@ -645,27 +733,26 @@ export function ChapterPracticeView({
                   className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   <ChevronLeft className="h-4 w-4" />
-                  Ch {chapter.number - 1}
+                  Previous Chapter
                 </button>
               )}
-              {chapter.number < 17 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = chapterAnalyticsList.find(
-                      (c) => c.chapter.number === chapter.number + 1
-                    );
-                    if (next) {
-                      onSelectChapter(next.chapter.id);
-                      setFocusIndex(0);
-                    }
-                  }}
-                  className="inline-flex items-center gap-1 rounded-xl bg-teal-600 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-700 dark:bg-teal-500 dark:text-slate-950 dark:hover:bg-teal-400"
-                >
-                  Continue to Ch {chapter.number + 1}
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              )}
+              {activeChapterGlobalIndex >= 0 &&
+                activeChapterGlobalIndex < chapterAnalyticsList.length - 1 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = chapterAnalyticsList[activeChapterGlobalIndex + 1];
+                      if (next) {
+                        onSelectChapter(next.chapter.id);
+                        setFocusIndex(0);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 rounded-xl bg-teal-600 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-700 dark:bg-teal-500 dark:text-slate-950 dark:hover:bg-teal-400"
+                  >
+                    Next Chapter
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                )}
             </div>
           </div>
         </div>

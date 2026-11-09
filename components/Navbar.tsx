@@ -55,7 +55,7 @@ export function Navbar({
       label: 'Chapters Bank',
       shortLabel: 'Chapters',
       icon: BookOpen,
-      counter: 17,
+      counter: 54,
       counterTone: 'default',
     },
     {
@@ -91,14 +91,14 @@ export function Navbar({
           <div>
             <div className="flex items-center gap-2">
               <span className="font-display text-base font-bold tracking-tight text-slate-900 dark:text-slate-50">
-                BioMed 102
+                MedBank 101–102
               </span>
               <span className="hidden text-xs font-medium text-teal-700 sm:inline dark:text-teal-400">
-                · Dr. Hesham Esmat
+                · 2,003 Verified MCQs
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Biochemistry &amp; Molecular Biology MCQ Bank
+              Biochemistry (1,137) · Anatomy (581) · Histology (285)
             </p>
           </div>
         </button>

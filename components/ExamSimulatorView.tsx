@@ -23,6 +23,7 @@ import { motion } from 'motion/react';
 import {
   ExamSessionResult,
   OptionKey,
+  PdfSourceId,
   Question,
 } from '@/lib/types';
 import {
@@ -48,7 +49,7 @@ interface ExamSimulatorViewProps {
   onCompleteExam: (result: ExamSessionResult) => void;
   onGoToWrongBank: () => void;
   onOpenPdfAtPage: (
-    pdfSource: 'module102' | 'heme_purine',
+    pdfSource: PdfSourceId,
     page: number,
     title: string
   ) => void;
@@ -198,6 +199,10 @@ export function ExamSimulatorView({
   // STAGE 1: SETUP SCREEN
   // ============================================================================
   if (stage === 'setup') {
+    const bioIds = CHAPTERS.filter((c) => (c.subject || 'Biochemistry') === 'Biochemistry').map((c) => c.id);
+    const anatIds = CHAPTERS.filter((c) => c.subject === 'Anatomy').map((c) => c.id);
+    const histIds = CHAPTERS.filter((c) => c.subject === 'Histology').map((c) => c.id);
+
     return (
       <div className="mx-auto max-w-[1440px] space-y-8 px-4 py-8 sm:px-6 lg:px-8">
         <section className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xs sm:p-8 dark:border-slate-800/90 dark:bg-slate-900">
@@ -207,10 +212,10 @@ export function ExamSimulatorView({
                 Official End-of-Module Assessment Format
               </p>
               <h1 className="font-display text-2xl font-bold text-slate-900 sm:text-3xl lg:text-4xl dark:text-white">
-                60-Question Biochemistry Exam Simulator
+                60-Question Medical Exam Simulator
               </h1>
               <p className="text-sm leading-relaxed text-slate-600 sm:text-base dark:text-slate-400">
-                Simulate real Module 102 examination conditions with{' '}
+                Simulate real Module 101 &amp; 102 examination conditions with{' '}
                 <strong className="font-semibold text-slate-900 dark:text-slate-100">
                   60 randomized questions
                 </strong>{' '}
@@ -218,9 +223,7 @@ export function ExamSimulatorView({
                 <strong className="font-semibold text-slate-900 dark:text-slate-100">
                   60-minute (60:00) countdown timer
                 </strong>
-                . Upon submission, receive a complete chapter-by-chapter performance breakdown
-                and full explanations—plus any wrong answers automatically sync to your Wrong
-                Answered Questions bank.
+                . Choose to test across all 54 chapters, Biochemistry only, Upper Limb Anatomy only, or Histology only.
               </p>
 
               {/* Spec Specifications Grid */}
@@ -233,7 +236,7 @@ export function ExamSimulatorView({
                     60 MCQs
                   </div>
                   <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                    From {ALL_QUESTIONS.length} curated questions
+                    From {ALL_QUESTIONS.length} verified questions
                   </div>
                 </div>
 
@@ -254,10 +257,10 @@ export function ExamSimulatorView({
                     Post-Exam Analytics
                   </div>
                   <div className="mt-1 font-mono text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
-                    17 Chapters
+                    54 Chapters
                   </div>
                   <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                    Per-chapter accuracy &amp; keys
+                    17 Bio + 33 Anat + 4 Hist
                   </div>
                 </div>
               </div>
@@ -276,35 +279,77 @@ export function ExamSimulatorView({
 
             {/* Chapter Scope Customization Box */}
             <div className="rounded-xl border border-slate-200/90 bg-slate-50/60 p-5 lg:col-span-5 dark:border-slate-800 dark:bg-slate-950/50">
-              <div className="flex items-center justify-between border-b border-slate-200/80 pb-3 dark:border-slate-800">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 pb-3 dark:border-slate-800">
                 <div>
                   <h2 className="font-display text-sm font-bold text-slate-900 dark:text-white">
-                    Included Chapters ({selectedChapterIds.length} / 17)
+                    Included Chapters ({selectedChapterIds.length} / {CHAPTERS.length})
                   </h2>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Default includes all 17 chapters for comprehensive exam simulation
+                    Select subject preset or customize chapters below
                   </p>
                 </div>
+              </div>
+
+              {/* Subject Scope Presets */}
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 <button
                   type="button"
-                  onClick={() =>
-                    setSelectedChapterIds(
-                      selectedChapterIds.length === CHAPTERS.length
-                        ? ['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6', 'ch7']
-                        : CHAPTERS.map((c) => c.id)
-                    )
-                  }
-                  className="text-xs font-semibold text-teal-600 hover:underline dark:text-teal-400"
+                  onClick={() => setSelectedChapterIds(CHAPTERS.map((c) => c.id))}
+                  className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                    selectedChapterIds.length === CHAPTERS.length
+                      ? 'bg-teal-600 text-white dark:bg-teal-500 dark:text-slate-950'
+                      : 'border border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+                  }`}
                 >
-                  {selectedChapterIds.length === CHAPTERS.length
-                    ? 'Select First 7 Only'
-                    : 'Select All 17'}
+                  All 54 Chapters
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedChapterIds(bioIds)}
+                  className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                    selectedChapterIds.length === bioIds.length &&
+                    selectedChapterIds.every((id) => bioIds.includes(id))
+                      ? 'bg-teal-600 text-white dark:bg-teal-500 dark:text-slate-950'
+                      : 'border border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+                  }`}
+                >
+                  Biochemistry Only (17)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedChapterIds(anatIds)}
+                  className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                    selectedChapterIds.length === anatIds.length &&
+                    selectedChapterIds.every((id) => anatIds.includes(id))
+                      ? 'bg-teal-600 text-white dark:bg-teal-500 dark:text-slate-950'
+                      : 'border border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+                  }`}
+                >
+                  Anatomy Only (33)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedChapterIds(histIds)}
+                  className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                    selectedChapterIds.length === histIds.length &&
+                    selectedChapterIds.every((id) => histIds.includes(id))
+                      ? 'bg-teal-600 text-white dark:bg-teal-500 dark:text-slate-950'
+                      : 'border border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+                  }`}
+                >
+                  Histology Only (4)
                 </button>
               </div>
 
-              <div className="mt-3 grid max-h-64 grid-cols-1 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2">
+              <div className="mt-3 grid max-h-60 grid-cols-1 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2">
                 {CHAPTERS.map((ch) => {
                   const checked = selectedChapterIds.includes(ch.id);
+                  const subjPrefix =
+                    ch.subject === 'Anatomy'
+                      ? 'Anat'
+                      : ch.subject === 'Histology'
+                      ? 'Hist'
+                      : 'Bio';
                   return (
                     <button
                       key={ch.id}
@@ -318,7 +363,7 @@ export function ExamSimulatorView({
                     >
                       <span className="truncate">
                         <span className="font-mono text-[11px] text-teal-700 dark:text-teal-400">
-                          Ch {ch.number}:
+                          {subjPrefix} {ch.number}:
                         </span>{' '}
                         {ch.shortTitle}
                       </span>

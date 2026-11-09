@@ -1,4 +1,8 @@
-export type OptionKey = 'a' | 'b' | 'c' | 'd' | 'e';
+export type OptionKey = 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h';
+
+export type SubjectId = 'Biochemistry' | 'Anatomy' | 'Histology' | 'Physiology';
+
+export type PdfSourceId = 'module102' | 'heme_purine' | 'anatomy_ul' | 'histology';
 
 export interface QuestionOption {
   key: OptionKey;
@@ -6,9 +10,10 @@ export interface QuestionOption {
 }
 
 export interface Question {
-  id: string; // e.g., "ch1-q1"
-  chapterId: string; // e.g., "ch1"
+  id: string; // e.g., "ch1-q1" or "anat-ul-01-q1"
+  chapterId: string; // e.g., "ch1" or "anat-ul-01"
   chapterNumber: number;
+  subject?: SubjectId;
   questionNumber: number;
   questionLabel?: string; // e.g. "24-(1)" if sub-question
   stem: string;
@@ -17,7 +22,7 @@ export interface Question {
   alsoAcceptedOption?: OptionKey; // e.g. Ch2 Q62 has A&B in answer key
   sourceTag: string; // e.g. "End of module exam 2023"
   explanation: string;
-  pdfSource: 'module102' | 'heme_purine';
+  pdfSource: PdfSourceId;
   pdfPage: number;
   isCancelled?: boolean;
 }
@@ -25,11 +30,12 @@ export interface Question {
 export interface Chapter {
   id: string;
   number: number;
+  subject?: SubjectId;
   title: string;
   shortTitle: string;
   description: string;
-  category: 'Structural Biochemistry' | 'Enzymology & Bioenergetics' | 'Molecular Biology' | 'Metabolism';
-  pdfSource: 'module102' | 'heme_purine';
+  category: string;
+  pdfSource: PdfSourceId;
   startPage: number;
   endPage: number;
   totalPdfQuestions: number;

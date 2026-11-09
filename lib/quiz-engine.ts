@@ -229,7 +229,13 @@ export function gradeExamSession(params: {
 
   for (const q of questions) {
     const ch = CHAPTERS_BY_ID[q.chapterId];
-    const chTitle = ch ? `Ch ${ch.number}: ${ch.shortTitle}` : q.chapterId;
+    const subjPrefix =
+      ch?.subject === 'Anatomy'
+        ? 'Anat'
+        : ch?.subject === 'Histology'
+        ? 'Hist'
+        : 'Bio';
+    const chTitle = ch ? `${subjPrefix} Ch ${ch.number}: ${ch.shortTitle}` : q.chapterId;
     if (!chapterStatsMap.has(q.chapterId)) {
       chapterStatsMap.set(q.chapterId, {
         chapterId: q.chapterId,
@@ -269,9 +275,9 @@ export function gradeExamSession(params: {
       accuracy: item.total > 0 ? Math.round((item.correct / item.total) * 100) : 0,
     }))
     .sort((a, b) => {
-      const chA = CHAPTERS_BY_ID[a.chapterId]?.number ?? 99;
-      const chB = CHAPTERS_BY_ID[b.chapterId]?.number ?? 99;
-      return chA - chB;
+      const idxA = CHAPTERS.findIndex((c) => c.id === a.chapterId);
+      const idxB = CHAPTERS.findIndex((c) => c.id === b.chapterId);
+      return idxA - idxB;
     });
 
   return {
@@ -427,8 +433,8 @@ export function calculateOverallAnalytics(
 
 /**
  * Creates initial state. When withSeedData is true, populates realistic medical student
- * study history across the 17 chapters, 8 active wrong answers for immediate remediation,
- * 3 resolved wrong answers, and 2 past 60-question exam simulations.
+ * study history across Biochemistry & Upper Limb Anatomy chapters, active wrong answers
+ * for immediate remediation, resolved wrong answers, and 2 past 60-question exam simulations.
  */
 export function createInitialProgressState(
   withSeedData: boolean = true
@@ -445,31 +451,44 @@ export function createInitialProgressState(
   const baseTimestamp = 1730990000000;
   let state: UserProgressState = {
     attempts: {},
-    bookmarks: ['ch1-q8', 'ch5-q11', 'ch7-q2', 'ch16-q1', 'ch17-q6'],
+    bookmarks: [
+      'ch1-q8',
+      'ch5-q11',
+      'ch7-q2',
+      'anat-ul-01-q1',
+      'anat-ul-04-q2',
+      'anat-ul-17-q1',
+      'hist-01-q1',
+      'hist-02-q4',
+      'hist-04-q5',
+    ],
     examHistory: [],
     lastActiveChapterId: 'ch1',
   };
 
-  // Seed realistic chapter practice attempts across Chapters 1–17
+  // Seed realistic chapter practice attempts across Biochemistry, Upper Limb Anatomy & Histology
   const wrongTargetIds = new Set([
-    'ch1-q6',  // Seleno-cysteine vs cysteine
-    'ch2-q5',  // Protein denaturation primary structure intact
-    'ch3-q7',  // Sorbitol cataract vs galactitol
-    'ch4-q9',  // Cardiolipin mitochondrial inner membrane
-    'ch5-q4',  // CO affinity & left shift
-    'ch7-q8',  // Competitive inhibition Km increases, Vmax unchanged
-    'ch10-q5', // Eukaryotic DNA polymerases alpha/delta/epsilon
-    'ch16-q5', // Lead poisoning inhibits ALA dehydratase & ferrochelatase
-    'ch17-q5', // Lesch-Nyhan HGPRT deficiency
+    'ch1-q6',          // Seleno-cysteine vs cysteine
+    'ch2-q5',          // Protein denaturation primary structure intact
+    'ch3-q7',          // Sorbitol cataract vs galactitol
+    'ch4-q9',          // Cardiolipin mitochondrial inner membrane
+    'ch5-q4',          // CO affinity & left shift
+    'ch7-q8',          // Competitive inhibition Km increases, Vmax unchanged
+    'ch16-q5',         // Lead poisoning inhibits ALA dehydratase & ferrochelatase
+    'anat-ul-01-q1',   // Lateral pectoral nerve pierces clavipectoral fascia
+    'anat-ul-04-q5',   // Teres major is not a rotator cuff muscle
+    'anat-ul-17-q4',   // Ulnar nerve lesion causes loss of finger abduction/adduction
+    'hist-01-q8',      // Microtubules do not form microvilli (actin microfilaments do)
+    'hist-04-q5',      // Spectrin maintains erythrocyte biconcave disc shape
   ]);
 
   const resolvedTargetIds = new Set([
     'ch1-q2',
     'ch3-q2',
-    'ch6-q3',
+    'anat-ul-02-q1',
+    'hist-02-q1',
   ]);
 
-  // Answer ~68 questions across chapters so progression bars & chapter analytics look authentic
   const chaptersToSeed: Record<string, number> = {
     ch1: 11,
     ch2: 8,
@@ -481,13 +500,19 @@ export function createInitialProgressState(
     ch8: 4,
     ch9: 4,
     ch10: 4,
-    ch11: 3,
-    ch12: 3,
-    ch13: 2,
-    ch14: 2,
-    ch15: 2,
     ch16: 5,
     ch17: 4,
+    'anat-ul-01': 8,
+    'anat-ul-02': 6,
+    'anat-ul-03': 6,
+    'anat-ul-04': 10,
+    'anat-ul-06': 7,
+    'anat-ul-15': 5,
+    'anat-ul-17': 10,
+    'hist-01': 12,
+    'hist-02': 10,
+    'hist-03': 8,
+    'hist-04': 10,
   };
 
   let offset = 0;
