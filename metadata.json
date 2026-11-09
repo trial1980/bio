@@ -1,0 +1,6 @@
+{
+  "name": "BioMed 102 — Dr. Hesham Esmat Biochemistry MCQ Bank & Exam Simulator",
+  "description": "Interactive Biochemistry Module 102 MCQ Bank, Chapter Analytics Dashboard, Wrong Answer Remediation Hub, and 60-Minute Exam Simulator based on Dr. Hesham Esmat's curriculum.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
